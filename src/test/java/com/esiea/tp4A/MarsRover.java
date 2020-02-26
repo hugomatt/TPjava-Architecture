@@ -1,3 +1,5 @@
+package com.esiea.tp4A;
+
 public interface MarsRover {
 
     default MarsRover initialize(Position position) {
@@ -63,3 +65,4 @@ public enum Direction {
     
     NORTH, EAST, SOUTH, WEST;
 }
+
