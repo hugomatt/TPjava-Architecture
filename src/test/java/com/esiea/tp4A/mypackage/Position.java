@@ -10,6 +10,7 @@ public interface Position {
         return new FixedPosition(x, y, direction);
     }
     
+    /* Une classe utilise une interface, il suffit d'utiliser le mot clé IMPLEMENTS    */
     final class FixedPosition implements Position {
 
         private final int x;
