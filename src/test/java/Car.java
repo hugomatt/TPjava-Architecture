@@ -5,6 +5,6 @@ public class Car{
     public static void main (String[] args){
 
 
-System.out.println("La diretion" +Direction.EAST);
+System.out.println("La direction" +Direction.EAST);
     }
 }

@@ -25,19 +25,16 @@ public interface Position {
 
         @Override
         public int getX() {
-
             return x;
         }
 
         @Override
         public int getY() {
-
             return y;
         }
         
         @Override
         public Direction getDirection() {
-
             return direction;
         }
     }
