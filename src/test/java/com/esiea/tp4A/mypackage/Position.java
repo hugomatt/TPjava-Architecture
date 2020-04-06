@@ -10,7 +10,6 @@ public interface Position {
         return new FixedPosition(x, y, direction);
     }
     
-    /* Une classe utilise une interface, il suffit d'utiliser le mot clé IMPLEMENTS    */
     final class FixedPosition implements Position {
 
         private final int x;
@@ -25,16 +24,19 @@ public interface Position {
 
         @Override
         public int getX() {
+
             return x;
         }
 
         @Override
         public int getY() {
+
             return y;
         }
         
         @Override
         public Direction getDirection() {
+
             return direction;
         }
     }
