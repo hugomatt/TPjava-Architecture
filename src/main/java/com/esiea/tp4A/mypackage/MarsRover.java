@@ -1,5 +1,9 @@
 package com.esiea.tp4A.mypackage;
 
+import com.esiea.tp4A.mypackage.Direction;
+import com.esiea.tp4A.mypackage.PlanetMap;
+import com.esiea.tp4A.mypackage.Position;
+
 public interface MarsRover {
 
 	default MarsRover initialize(Position position) {

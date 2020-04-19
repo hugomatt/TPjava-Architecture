@@ -1,22 +1,37 @@
 package com.esiea.tp4A.mypackage;
 
-
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 public class Planet implements PlanetMap {
 	public final int LASER_RANGE;
-	private int planetSize;
-	private Set<Position> obstaclePositions;
+	final int planetSize;
+	final String name;
+	Set<Position> obstaclePositions;	
+	Map<String, Rover> players;
 
-	public Planet(int planetSize) {
-		//On calcule une portee aleatoire du laser
+	public Planet(String name) {
+		this.players = new HashMap<String, Rover>(0);
+		this.name = name;
+		//calcul al�atoire de la taille de la plan�te
 		Random random = new Random();
-		LASER_RANGE = random.nextInt(planetSize/2); //la portee ne doit pas etre trop longue, il ne faut pas que le laser fasse le tour du monde.
-		this.setPlanetSize(planetSize);
+		final int i = random.nextInt(3);
+		final int randomPlanetSize;
+		if(i == 0)
+			randomPlanetSize = 100;
+		else if(i == 1)
+			randomPlanetSize = 300;			
+		else
+			randomPlanetSize = 600;
+		//On calcule une port�e al�atoire du laser, qui ne doit pas faire le tour de la carte
+		LASER_RANGE = random.nextInt(randomPlanetSize/2);
+		this.planetSize = randomPlanetSize;
 		obstaclePositions = new HashSet<Position>();
-		this.generateObstacles();		
+		this.generateObstacles();
+		System.out.println("Planet " + this.name + " created.");
 	}
 
 	private void generateObstacles() {
@@ -26,46 +41,41 @@ public class Planet implements PlanetMap {
 			boolean isCollidingWithAnotherObstacle = true;
 			while(isCollidingWithAnotherObstacle) {
 				Random random = new Random();
-				//calcul d'une position
+				//calcul d'une position al�atoire pour un obstacle, la direction importe peu
 				final int x = random.nextInt(planetSize) - planetSize / 2 + 1;
 				final int y = random.nextInt(planetSize) - planetSize / 2 + 1;
 				positionToCheck = Position.of(x, y, Direction.NORTH);
 
-				isCollidingWithAnotherObstacle = false;
-				/*if(this.obstaclePositions.contains(positionToCheck)) {
-					System.out.println("obColision");
-					isCollidingWithAnotherObstacle = true;
-				}*/
+				isCollidingWithAnotherObstacle = false;				
 					
-				for(Position obstaclePos : this.obstaclePositions()) { //apres, il suffit de verifier dans la liste s'il y a un obstacle avec la meme position
-					if(positionToCheck.getX() == obstaclePos.getX() && positionToCheck.getY() == obstaclePos.getY()) { //Si la position aleatoire est la meme que celle d'un obstacle de la liste
-						//System.out.println("obColision");
-						//System.out.println(obstaclePos == positionToCheck);
+				for(Position obstaclePos : this.obstaclePositions()) { //apr�s, il suffit de v�rifier dans la liste s'il y a un obstacle avec la m�me position
+					if(positionToCheck.getX() == obstaclePos.getX() && positionToCheck.getY() == obstaclePos.getY()) { //Si la position al�atoire est la m�me que celle d'un obstacle de la liste
+						
 						isCollidingWithAnotherObstacle = true;
-						break; //on s'arrete de verifier la position des obstacles, il faut creer une nouvelle position TODO use contains, this is too slow
+						break; //on s'arr�te de v�rifier la position des obstacles, il faut cr�er une nouvelle position
 					}
 				}
 			}
 			obstaclePositions.add(positionToCheck); //Si l'obstacle n'est pas en collision avec un autre obstacle
 		}
-		System.out.println(this.obstaclePositions().size() + " Obstacles generes sur " + obstaclesToGenerate);
+		System.out.println(this.obstaclePositions().size() + " obstacles generated of " + obstaclesToGenerate);
 	}
 
 	@Override
-	public Set<Position> obstaclePositions() {		
+	public Set<Position> obstaclePositions() {
 		return this.obstaclePositions;
 	}
 
 	public int getPlanetSize() {
 		return planetSize;
 	}
-
-	public void setPlanetSize(int planetSize) {
-		this.planetSize = planetSize;
+	
+	public void updatePlayerPosition(Rover rover) {
+		players.put(rover.getName(), rover);
 	}
-
-	public void showRovers() {
-		System.out.println();
+	
+	public Map<String, Rover> getPlayers() {
+		return players;
 	}
 
 }

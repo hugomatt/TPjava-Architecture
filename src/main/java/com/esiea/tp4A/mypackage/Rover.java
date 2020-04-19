@@ -1,33 +1,57 @@
 package com.esiea.tp4A.mypackage;
+
 import java.util.Random;
 
-public class SuperRoverMartien implements MarsRover {
+public class Rover implements MarsRover {
 	Position position;
 	Planet planetIn;
+	boolean isAlive;
+	String name;
 
-	public SuperRoverMartien(Planet planetIn) {
+	public Position getPosition() {
+		return position;
+	}	
+
+	public Planet getPlanetIn() {
+		return planetIn;
+	}	
+
+	public Rover(Planet planetIn, String name) {
 		this.planetIn = planetIn;
 		generateRoverPosition(planetIn);
-		initialize(this.position);		
+		initialize(this.position);
+		this.name = name;
 	}
 
 	private Position generateRoverPosition(Planet planetIn) {
 		Random random = new Random();
-		int tries=0;
 		do {
-			//calcul d'une position
+			//calcul d'une position al�atoire
 			final int x = random.nextInt(planetIn.getPlanetSize()) - planetIn.getPlanetSize() / 2 + 1;
 			final int y = random.nextInt(planetIn.getPlanetSize()) - planetIn.getPlanetSize() / 2 + 1;
 			this.position = Position.of(x, y, Direction.NORTH);
-			tries++;
 		}
 		while(!isRouteFree());
-		System.out.println(tries + " spawn tries for this rover. (nombre de tentative pour placer le rover sur la carte)"); //Tu peux enlever aussi
 		return this.position;
+	}
+
+	public boolean isAlive() {
+		return isAlive;
+	}
+
+	public void die() {
+		planetIn.getPlayers().remove(this.getName(), this);
+		isAlive = false;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	@Override
 	public MarsRover initialize(Position position) {
+		planetIn.updatePlayerPosition(this);
+		isAlive = true;
 		return this;
 	}
 
@@ -43,17 +67,14 @@ public class SuperRoverMartien implements MarsRover {
 
 	@Override
 	public Position move(String command) {
-		System.out.println(">>>> Position de depart X : " + this.position.getX() + " Y : " + this.position.getY() + " Direction : " + this.position.getDirection() + "\n ====");
 		Position previousPosition = this.position;
 		for(int i = 0; i < command.length(); i++) {
 			if(command.charAt(i) == 'q') {
 				rotateLeft(this.position.getDirection());							
 			} else if(command.charAt(i) == 'd') {
 				rotateRight(this.position.getDirection());			
-			} else if(command.charAt(i) == 'z') {
-				System.out.println("Position X : " + this.position.getX() + " Y : " + this.position.getY() + " Direction : " + this.position.getDirection() + "\n ====");
-				if(!moveForward(this.position.getDirection(), false)) {
-					System.out.println("rover bloque !"); 
+			} else if(command.charAt(i) == 'z') {				
+				if(!moveForward(this.position.getDirection(), false)) {					
 					return this.position = previousPosition;
 				}
 			} else if(command.charAt(i) == 's') {
@@ -69,43 +90,90 @@ public class SuperRoverMartien implements MarsRover {
 	private void shoot(Direction direction) {
 		Position laserPosition = this.position;
 		for(int i=1; i <= planetIn.LASER_RANGE; i++) {
-			for(Position obstaclePos : this.planetIn.obstaclePositions()) {
+
+			for(String potentialTarget : this.planetIn.getPlayers().keySet()) { //D�tection du joueur �ventuel � d�truire
+				if(potentialTarget==null)
+					continue;
+				Position potentialTargetPos = this.planetIn.getPlayers().get(potentialTarget).getPosition();
+				if(direction == Direction.NORTH) {
+					laserPosition = Position.of(this.position.getX(), calculateY(this.position.getY() + i), Direction.NORTH);
+					if(laserPosition.getX() == potentialTargetPos.getX() && laserPosition.getY() == potentialTargetPos.getY()) {
+						killPlayer(potentialTarget);
+						return;
+					}
+				}
+				if(direction == Direction.WEST) {
+					laserPosition = Position.of(calculateX(this.position.getX() - i), this.position.getY(), Direction.NORTH);
+					if(laserPosition.getX() == potentialTargetPos.getX() && laserPosition.getY() == potentialTargetPos.getY()) {
+						killPlayer(potentialTarget);
+						return;
+					}		
+				}
+				if(direction == Direction.SOUTH) {
+					laserPosition = Position.of(this.position.getX(), calculateY(this.position.getY() - i), Direction.NORTH);
+					if(laserPosition.getX() == potentialTargetPos.getX() && laserPosition.getY() == potentialTargetPos.getY()) {
+						killPlayer(potentialTarget);
+						return;
+					}
+				}	
+				if(direction == Direction.EAST) {
+					laserPosition = Position.of(calculateX(this.position.getX() + i), this.position.getY(), Direction.NORTH); 
+					if(laserPosition.getX() == potentialTargetPos.getX() && laserPosition.getY() == potentialTargetPos.getY()) {
+						killPlayer(potentialTarget);
+						return;
+					}
+				}
+			}
+
+			for(Position obstaclePos : this.planetIn.obstaclePositions()) { //D�tection de l'obstacle �ventuel � d�truire
 				if(direction == Direction.NORTH) {
 					laserPosition = Position.of(this.position.getX(), calculateY(this.position.getY() + i), Direction.NORTH);
 					if(laserPosition.getX() == obstaclePos.getX() && laserPosition.getY() == obstaclePos.getY()) {
-						planetIn.obstaclePositions().remove(obstaclePos); System.out.println("Obstacle touch�"); return;//TODO afficher la position de l'obstacle d�truit pour �tre s�r
+						destroyObstacle(obstaclePos); 
+						return;
 					}
 				}
 				if(direction == Direction.WEST) {
 					laserPosition = Position.of(calculateX(this.position.getX() - i), this.position.getY(), Direction.NORTH);
 					if(laserPosition.getX() == obstaclePos.getX() && laserPosition.getY() == obstaclePos.getY()) {
-						planetIn.obstaclePositions().remove(obstaclePos); System.out.println("Obstacle touch�"); return;
+						destroyObstacle(obstaclePos); 
+						return;
 					}		
 				}
 				if(direction == Direction.SOUTH) {
 					laserPosition = Position.of(this.position.getX(), calculateY(this.position.getY() - i), Direction.NORTH);
 					if(laserPosition.getX() == obstaclePos.getX() && laserPosition.getY() == obstaclePos.getY()) {
-						planetIn.obstaclePositions().remove(obstaclePos); System.out.println("Obstacle touch�"); return;
+						destroyObstacle(obstaclePos); 
+						return;
 					}
 				}	
 				if(direction == Direction.EAST) {
 					laserPosition = Position.of(calculateX(this.position.getX() + i), this.position.getY(), Direction.NORTH); 
 					if(laserPosition.getX() == obstaclePos.getX() && laserPosition.getY() == obstaclePos.getY()) {
-						planetIn.obstaclePositions().remove(obstaclePos); System.out.println("Obstacle touch�"); return;
+						destroyObstacle(obstaclePos); 
+						return;
 					}
 				}
-			}
+			}			
 		}
 	}
 
+	private void destroyObstacle(Position obstaclePos) {
+		planetIn.obstaclePositions().remove(obstaclePos);		
+	}
+
+	private void killPlayer(String targetName) {
+		this.planetIn.getPlayers().get(targetName).die();
+	}
+
 	/**
-	 * Permet de faire avancer ou reculer le rover tout en verifiant les obstacles eventuels.
+	 * Permet de faire avancer ou reculer le rover tout en v�rifiant les obstacles �ventuels.
 	 * 
 	 * @param direction		la direction du rover
 	 * @param reverse		true pour reculer, false pour avancer
 	 * @return				retourne true si le rover a pu avancer, sinon false
 	 */
-	private boolean moveForward(Direction direction, Boolean reverse) { //true pour reculer, false pour avancer
+	private boolean moveForward(Direction direction, Boolean reverse) {
 		int flag = 1;
 		if(reverse)
 			flag = -1;		
@@ -123,7 +191,6 @@ public class SuperRoverMartien implements MarsRover {
 	public boolean isRouteFree() {
 		for(Position obstaclePos : this.planetIn.obstaclePositions()) {
 			if(obstaclePos.getX() == this.position.getX() && obstaclePos.getY() == this.position.getY()) {
-				System.out.println("Obstacle � la position : " + obstaclePos.getX() +"  Y:" +obstaclePos.getY());
 				return false;	
 			}
 		}
@@ -174,33 +241,6 @@ public class SuperRoverMartien implements MarsRover {
 			this.position = Position.of(this.position.getX(), this.position.getY(), Direction.WEST);
 		if(direction == Direction.WEST)
 			this.position = Position.of(this.position.getX(), this.position.getY(), Direction.NORTH);
-	}
-
-	public static void main (String[] args) {		
-		Random random = new Random();		
-
-		//calcul aleatoire de la taille de la planete
-		final int i = random.nextInt(3);
-		final int planetSize;
-		if(i == 0)
-			planetSize = 100;
-		else if(i == 1)
-			planetSize = 300;			
-		else
-			planetSize = 600;
-
-		//commande pour le mouvement du rover, TODO ajouter une entree utilisateur
-		String command = "zezzzzzz";		
-
-		//On cree une planete avec une taille aleatoire
-		Planet mars = new Planet(planetSize);
-
-		//On cree un rover avec les parametres definis juste au dessus (planete)
-		SuperRoverMartien rover = new SuperRoverMartien(mars);		
-		rover.move(command);
-		System.out.println(" ====");
-		System.out.println(">>>> Position d'arrivee X : " + rover.position.getX() + " Y : " + rover.position.getY() + " Direction : " + rover.position.getDirection() + "\n ====");
-
 	}
 
 }
